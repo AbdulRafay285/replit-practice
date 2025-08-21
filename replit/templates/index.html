@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title style="position: center;">ABDUL.ai</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #ece5dd;
+    margin: 0;
+}
+
+.chat-container {
+    width: 100%;
+    max-width: 450px;
+    height: 95vh;
+    background-color: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+#chat {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+}
+
+.message-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.message {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 20px;
+    word-wrap: break-word;
+    position: relative;
+    font-size: 15px;
+}
+
+.message .timestamp {
+    font-size: 10px;
+    color: #555;
+    position: absolute;
+    bottom: -15px;
+    right: 10px;
+}
+
+.user-wrapper {
+    justify-content: flex-end;
+}
+
+.user .message {
+    background-color: #dcf8c6;
+    border-bottom-right-radius: 5px;
+}
+
+.bot-wrapper {
+    justify-content: flex-start;
+}
+
+.bot .message {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-bottom-left-radius: 5px;
+}
+
+.avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.input-container {
+    display: flex;
+    border-top: 1px solid #ccc;
+    background-color: #f0f0f0;
+    padding: 5px;
+}
+
+#message {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    border-radius: 20px;
+}
+
+button {
+    padding: 0 20px;
+    margin-left: 5px;
+    background-color: #128c7e;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 20px;
+}
+
+button:hover {
+    background-color: #075e54;
+}
+
+#typing-indicator {
+    font-style: italic;
+    color: #555;
+    margin: 0 15px 10px 15px;
+}
+
+@media (max-width: 500px) {
+    .chat-container {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+    }
+    #message { font-size: 14px; }
+    .message { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="chat-container">
+    <div id="chat"></div>
+    <div id="typing-indicator" style="display:none;">Bot is typing...</div>
+    <div class="input-container">
+        <input type="text" id="message" placeholder="Type a message..." onkeypress="if(event.key==='Enter'){sendMessage()}">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+function getTime() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+}
+
+async function sendMessage() {
+    const messageBox = document.getElementById("message");
+    const message = messageBox.value.trim();
+    if (!message) return;
+
+    appendMessage("user", message);
+    messageBox.value = "";
+
+    const typingIndicator = document.getElementById("typing-indicator");
+    typingIndicator.style.display = "block";
+
+    const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+    });
+
+    const data = await response.json();
+    typingIndicator.style.display = "none";
+
+    appendMessage("bot", data.reply || "Error getting response");
+}
+
+function appendMessage(sender, text) {
+    const chat = document.getElementById("chat");
+    const wrapper = document.createElement("div");
+    wrapper.className = sender + "-wrapper message-wrapper";
+
+    const avatar = document.createElement("img");
+    avatar.className = "avatar";
+    avatar.src = sender === "user" ? "https://i.pravatar.cc/30?img=3" : "https://i.pravatar.cc/30?img=5";
+
+    const msg = document.createElement("div");
+    msg.className = "message";
+    msg.innerText = text;
+
+    const timestamp = document.createElement("div");
+    timestamp.className = "timestamp";
+    timestamp.innerText = getTime();
+
+    msg.appendChild(timestamp);
+    if (sender === "user") {
+        wrapper.appendChild(msg);
+        wrapper.appendChild(avatar);
+    } else {
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(msg);
+    }
+
+    chat.appendChild(wrapper);
+    chat.scrollTop = chat.scrollHeight;
+}
+</script>
+</body>
+</html>
